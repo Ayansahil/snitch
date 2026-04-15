@@ -32,7 +32,7 @@ const Register = () => {
             isSeller: formData.isSeller,
             fullname: formData.fullName
         })
-        navigate("/")
+        navigate("/login")
     };
 
     return (
