@@ -61,21 +61,24 @@ export const register = async (req, res) => {
   }
 };
 
-
 export const login = async (req, res) => {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
 
-    const user = await userModel.findOne({ email });
+  const user = await userModel.findOne({ email });
 
-    if (!user) {
-        return res.status(400).json({ message: "Invalid email or password" });
-    }
+  if (!user) {
+    return res.status(400).json({ message: "Invalid email or password" });
+  }
 
-    const isMatch = await user.comparePassword(password);
+  const isMatch = await user.comparePassword(password);
 
-    if (!isMatch) {
-        return res.status(400).json({ message: "Invalid email or password" });
-    }
+  if (!isMatch) {
+    return res.status(400).json({ message: "Invalid email or password" });
+  }
 
-    await sendTokenResponse(user, res, "User logged in successfully")
-}
+  await sendTokenResponse(user, res, "User logged in successfully");
+};
+
+export const googleCallback = async (req, res) => {
+  res.redirect("http://localhost:5173/");
+};

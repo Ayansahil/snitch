@@ -3,6 +3,10 @@ import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import cors from "cors";
 import authRouter from "./routes/auth.routes.js";
+import passport from "passport";
+import jwt from "jsonwebtoken";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import {config} from "./config/config.js"
 
 const app = express();
 
@@ -16,6 +20,16 @@ app.use(cors({
     credentials: true
 }));
 
+app.use(passport.initialize());
+
+// Configure Passport to use Google OAuth 2.0 strategy
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: '/api/auth/google/callback',
+}, (accessToken, refreshToken, profile, done) => {
+  return done(null, profile);
+}));
 
 app.get("/", (_req, res) => {
     res.status(200).json({ message: "Server is running" });
