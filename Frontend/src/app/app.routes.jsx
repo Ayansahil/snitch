@@ -31,27 +31,24 @@ export const routes = createBrowserRouter([
     children: [
       {
         path: "/seller/create-product",
-        element: (
-          <Protected role="seller">
+        element:<Protected role="seller">
             <CreateProduct />
           </Protected>
-        ),
+        ,
       },
       {
         path: "/seller/dashboard",
-        element: (
-          <Protected role="seller">
+        element:<Protected role="seller">
             <Dashboard />
           </Protected>
-        ),
+      ,
       },
       {
         path: "/seller/product/:productId",
-        element: (
-          <Protected>
+        element: <Protected role="seller">
             <SellerProductDetails />
           </Protected>
-        ),
+        ,
       },
     ],
   },
