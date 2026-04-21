@@ -1,16 +1,18 @@
 import cartModel from "../models/cart.model.js";
 import productModel from "../models/product.model.js";
-import stockOfVariant from "../dao/product.dao.js";
+import { stockOfVariant } from "../dao/product.dao.js";
 
 export const addToCart = async (req, res) => {
   const { productId, variantId } = req.params;
   const { quantity = 1 } = req.body
 
 
-  const product = await productModel.findOne({
-    _id: productId,
-    "variants._id": variantId,
-  });
+  const query = { _id: productId };
+  if (variantId !== "default") {
+    query["variants._id"] = variantId;
+  }
+
+  const product = await productModel.findOne(query);
 
   if (!product) {
     return res.status(404).json({
@@ -27,14 +29,14 @@ export const addToCart = async (req, res) => {
   const isProductAlreadyInCart = cart.items.some(
     (item) =>
       item.product.toString() === productId &&
-      item.variant?.toString() === variantId,
+      (variantId === "default" ? !item.variant : item.variant?.toString() === variantId),
   );
 
   if (isProductAlreadyInCart) {
     const quantityInCart = cart.items.find(
       (item) =>
         item.product.toString() === productId &&
-        item.variant?.toString() === variantId,
+        (variantId === "default" ? !item.variant : item.variant?.toString() === variantId),
     ).quantity;
 
     if (quantityInCart + quantity > stock) {
@@ -43,8 +45,15 @@ export const addToCart = async (req, res) => {
         success: false,
       });
     }
+    const updateQuery = { user: req.user._id, "items.product": productId };
+    if (variantId !== "default") {
+        updateQuery["items.variant"] = variantId;
+    } else {
+        updateQuery["items.variant"] = { $exists: false };
+    }
+
        await cartModel.findOneAndUpdate(
-            { user: req.user._id, "items.product": productId, "items.variant": variantId },
+            updateQuery,
             { $inc: { "items.$.quantity": quantity } },
             { new: true }
         )
@@ -63,7 +72,7 @@ export const addToCart = async (req, res) => {
     }
         cart.items.push({
         product: productId,
-        variant: variantId,
+        variant: variantId !== "default" ? variantId : undefined,
         quantity,
         price: product.price
     })

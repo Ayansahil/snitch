@@ -10,7 +10,12 @@ const validateRequest = (req, res, next) => {
 
 export const validateAddToCart = [
     param("productId").isMongoId().withMessage("Invalid product ID"),
-    param("variantId").optional().isMongoId().withMessage("Invalid variant ID"),
+    param("variantId").custom((value) => {
+        if (value === "default") return true;
+        // Simple regex check for MongoId since isMongoId() might be strict on types
+        if (/^[0-9a-fA-F]{24}$/.test(value)) return true;
+        return false;
+    }).withMessage("Invalid variant ID"),
     body("quantity").optional().isInt({ min: 1 }).withMessage("Quantity must be at least 1"),
     validateRequest
 ]

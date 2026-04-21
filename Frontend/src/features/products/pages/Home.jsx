@@ -1,17 +1,30 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useProduct } from '../hooks/useProduct';
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
+import Navbar from '../components/Navbar';
 
 const Home = () => {
     const products = useSelector(state => state.product.products);
-    const user = useSelector(state => state.auth.user);
+    const searchQuery = useSelector(state => state.product.searchQuery);
     const { handleGetAllProducts } = useProduct();
     const navigate = useNavigate();
+
+    const [filteredProducts, setFilteredProducts] = useState([]);
 
     useEffect(() => {
         handleGetAllProducts();
     }, []);
+
+    // Filter products whenever products or global searchQuery changes
+    useEffect(() => {
+        if (!products) return;
+        
+        const filtered = products.filter(p =>
+            p.title?.toLowerCase().includes((searchQuery || "").toLowerCase())
+        );
+        setFilteredProducts(filtered);
+    }, [searchQuery, products]);
 
     return (
         <>
@@ -25,34 +38,11 @@ const Home = () => {
                 className="min-h-screen selection:bg-[#C9A96E]/30"
                 style={{ backgroundColor: '#fbf9f6', fontFamily: "'Inter', sans-serif" }}
             >
-                {/* ── Navbar ── */}
-                <nav className="px-8 lg:px-16 xl:px-24 pt-10 pb-6 flex items-center justify-between border-b" style={{ borderColor: '#e4e2df' }}>
-                    <Link to="/"
-                        className="text-sm font-medium tracking-[0.35em] uppercase hover:opacity-80 transition-opacity"
-                        style={{ fontFamily: "'Cormorant Garamond', serif", color: '#C9A96E' }}
-                    >
-                        Snitch.
-                    </Link>
-                    <div className="flex gap-6 items-center text-[10px] uppercase tracking-[0.2em] font-medium" style={{ color: '#7A6E63' }}>
-                        {user ? (
-                            <>
-                                <span style={{ color: '#1b1c1a' }}>{user.fullname}</span>
-                                {user.role === 'seller' && (
-                                    <Link to="/seller/dashboard" className="transition-colors hover:text-[#C9A96E]">Seller Dashboard</Link>
-                                )}
-                            </>
-                        ) : (
-                            <>
-                                <Link to="/login" className="transition-colors hover:text-[#C9A96E]">Sign In</Link>
-                                <Link to="/register" className="transition-colors hover:text-[#C9A96E]">Sign Up</Link>
-                            </>
-                        )}
-                    </div>
-                </nav>
+                <Navbar />
 
                 <div className="max-w-7xl mx-auto px-8 lg:px-16 xl:px-24">
                     {/* ── Hero / Header ── */}
-                    <div className="pt-20 pb-20 text-center flex flex-col items-center">
+                    <div className="pt-20 pb-10 text-center flex flex-col items-center">
                         <span className="text-[10px] uppercase tracking-[0.24em] font-medium mb-6" style={{ color: '#C9A96E' }}>
                             The Collection
                         </span>
@@ -62,18 +52,25 @@ const Home = () => {
                         >
                             Curated Archive
                         </h1>
-                        <p className="max-w-xl mx-auto text-sm leading-relaxed" style={{ color: '#7A6E63' }}>
+                        <p className="max-w-xl mx-auto text-sm leading-relaxed mb-10" style={{ color: '#7A6E63' }}>
                             Discover our latest curation of premium minimalist pieces, meticulously designed for effortless elegance and enduring quality.
                         </p>
+
+                        {/* Result count when searching */}
+                        {searchQuery && (
+                            <p className="mt-3 text-[10px] uppercase tracking-[0.18em]" style={{ color: '#B5ADA3' }}>
+                                {filteredProducts.length} {filteredProducts.length === 1 ? 'result' : 'results'} for &ldquo;{searchQuery}&rdquo;
+                            </p>
+                        )}
                     </div>
 
                     {/* ── Product Grid ── */}
-                    {products && products.length > 0 ? (
+                    {filteredProducts && filteredProducts.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-16 pb-32">
-                            {products.map(product => {
+                            {filteredProducts.map(product => {
                                 const imageUrl = product.images && product.images.length > 0
                                     ? product.images[0].url
-                                    : '/snitch_editorial_warm.png'; // Fallback
+                                    : '/snitch_editorial_warm.png';
 
                                 return (
                                     <div key={product._id} className="group cursor-pointer flex flex-col" onClick={() => navigate(`/product/${product._id}`)}>
@@ -117,12 +114,25 @@ const Home = () => {
                         </div>
                     ) : (
                         <div className="py-24 text-center flex flex-col items-center">
-                            <h2 className="text-2xl mb-4" style={{ fontFamily: "'Cormorant Garamond', serif", color: '#1b1c1a' }}>
-                                No pieces available.
-                            </h2>
-                            <p className="max-w-md mx-auto text-sm leading-relaxed" style={{ color: '#7A6E63' }}>
-                                We are currently preparing our next collection. Please check back later.
-                            </p>
+                            {searchQuery ? (
+                                <>
+                                    <span className="text-[10px] uppercase tracking-[0.2em] font-medium mb-4" style={{ color: '#C9A96E' }}>
+                                        No Results
+                                    </span>
+                                    <p className="max-w-md mx-auto text-lg leading-relaxed" style={{ fontFamily: "'Cormorant Garamond', serif", color: '#7A6E63' }}>
+                                        No pieces found for &ldquo;{searchQuery}&rdquo;. Try a different search term.
+                                    </p>
+                                </>
+                            ) : (
+                                <>
+                                    <h2 className="text-2xl mb-4" style={{ fontFamily: "'Cormorant Garamond', serif", color: '#1b1c1a' }}>
+                                        No pieces available.
+                                    </h2>
+                                    <p className="max-w-md mx-auto text-sm leading-relaxed" style={{ color: '#7A6E63' }}>
+                                        We are currently preparing our next collection. Please check back later.
+                                    </p>
+                                </>
+                            )}
                         </div>
                     )}
                 </div>
