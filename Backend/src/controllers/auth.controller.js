@@ -13,7 +13,11 @@ async function sendTokenResponse(user, res, message) {
     },
   );
 
-  res.cookie("token", token);
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+  });
 
   res.status(200).json({
     message,
@@ -102,9 +106,13 @@ export const googleCallback = async (req, res) => {
       expiresIn: "7d",
     });
 
-  res.cookie("token", token);
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+  });
 
-  res.redirect("http://localhost:5173/");
+  res.redirect(process.env.CLIENT_URL || "http://localhost:5173/");
 };
 
 
