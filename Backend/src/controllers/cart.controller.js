@@ -52,11 +52,24 @@ export const addToCart = async (req, res) => {
         updateQuery["items.variant"] = { $exists: false };
     }
 
-       await cartModel.findOneAndUpdate(
+        const updatedCart = await cartModel.findOneAndUpdate(
             updateQuery,
             { $inc: { "items.$.quantity": quantity } },
             { new: true }
         )
+
+        // Check if quantity dropped to 0 or below and cleanup
+        const itemIndex = updatedCart.items.findIndex(i => 
+            i.product.toString() === productId && 
+            (variantId === "default" ? !i.variant : i.variant?.toString() === variantId)
+        );
+
+        if (itemIndex !== -1 && updatedCart.items[itemIndex].quantity <= 0) {
+            await cartModel.findOneAndUpdate(
+                { user: req.user._id },
+                { $pull: { items: { product: productId, variant: variantId === "default" ? { $exists: false } : variantId } } }
+            );
+        }
 
         return res.status(200).json({
             message: "Cart updated successfully",
@@ -84,6 +97,71 @@ export const addToCart = async (req, res) => {
         success: true
     })
 };
+
+export const removeFromCart = async (req, res) => {
+    const { productId, variantId } = req.params;
+    const userId = req.user._id;
+
+    const cart = await cartModel.findOne({ user: userId });
+    
+    if (cart) {
+        cart.items = cart.items.filter(item => {
+            const itemVariantId = item.variant?.toString() || "default";
+            return !(
+                item.product.toString() === productId &&
+                itemVariantId === variantId
+            );
+        });
+        await cart.save();
+    }
+
+    return res.status(200).json({
+        message: "Item removed from cart successfully",
+        success: true,
+        cart
+    });
+}
+
+export const updateCartItemQuantity = async (req, res) => {
+    const { productId, variantId } = req.params;
+    const { quantity } = req.body;
+    const userId = req.user._id;
+
+    if (quantity <= 0) {
+        return removeFromCart(req, res);
+    }
+
+    const stock = await stockOfVariant(productId, variantId);
+    if (quantity > stock) {
+        return res.status(400).json({
+            message: `Only ${stock} items left in stock`,
+            success: false
+        });
+    }
+
+    const cart = await cartModel.findOne({ user: userId });
+    if (!cart) {
+        return res.status(404).json({ message: "Cart not found", success: false });
+    }
+
+    const itemIndex = cart.items.findIndex(item => 
+        item.product.toString() === productId && 
+        (variantId === "default" ? !item.variant : item.variant.toString() === variantId)
+    );
+
+    if (itemIndex === -1) {
+        return res.status(404).json({ message: "Item not in cart", success: false });
+    }
+
+    cart.items[itemIndex].quantity = quantity;
+    await cart.save();
+
+    return res.status(200).json({
+        message: "Quantity updated successfully",
+        success: true,
+        cart
+    });
+}
 
 export const getCart = async (req,res) => {
     const user = req.user

@@ -1,7 +1,7 @@
 import express from "express";
 import { authenticateUser } from "../middlewares/auth.middleware.js";
 import { validateAddToCart } from "../validator/cart.validator.js";
-import { addToCart, getCart } from "../controllers/cart.controller.js";
+import { addToCart, getCart, removeFromCart, updateCartItemQuantity } from "../controllers/cart.controller.js";
 
 
 
@@ -26,6 +26,20 @@ router.post("/add/:productId/:variantId",authenticateUser, validateAddToCart, ad
  */
 router.get("/",authenticateUser, getCart)
 
+/**
+ * @route DELETE /api/cart/remove/:productId/:variantId
+ * @desc Remove item from cart
+ * @access Private
+ */
+router.delete("/remove/:productId/:variantId", authenticateUser, removeFromCart)
 
+
+
+/**
+ * @route PATCH /api/cart/update/:productId/:variantId
+ * @desc Update item quantity in cart
+ * @access Private
+ */
+router.patch("/update/:productId/:variantId", authenticateUser, updateCartItemQuantity)
 
 export default router;
