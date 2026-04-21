@@ -1,7 +1,7 @@
 import express from "express";
 import authenticateUser from "../middlewares/auth.middleware.js";
-import {validateAddToCart} from "../validator/cart.validator.js";
-import {} from "../controllers/cart.controller.js";
+import { validateAddToCart } from "../validator/cart.validator.js";
+import { addToCart, getCart } from "../controllers/cart.controller.js";
 
 
 
@@ -24,6 +24,7 @@ router.post("/add:productId/:variantId",authenticateUser, validateAddToCart, add
  * @desc Get user's cart
  * @access Private
  */
+router.get("/",authenticateUser, getCart)
 
 
 
