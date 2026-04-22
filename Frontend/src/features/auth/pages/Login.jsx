@@ -7,14 +7,14 @@ const Login = () => {
     const { handleLogin } = useAuth();
     const navigate = useNavigate();
 
-    const [ formData, setFormData ] = useState({
+    const [formData, setFormData] = useState({
         email: '',
         password: ''
     });
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [ name ]: value }));
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleSubmit = async (e) => {
@@ -37,7 +37,7 @@ const Login = () => {
             <section className="hidden lg:flex flex-col relative w-1/2 h-full bg-primary-container overflow-hidden">
                 {/* Branding Navigation */}
                 <div className="absolute top-0 left-0 p-12 z-20">
-                    <button 
+                    <button
                         onClick={() => navigate('/')}
                         className="group flex items-center gap-2 text-white/70 hover:text-white transition-all"
                     >
@@ -47,10 +47,10 @@ const Login = () => {
                 </div>
                 {/* Background Image with Overlay */}
                 <div className="absolute inset-0 z-0">
-                    <img 
-                        className="w-full h-full object-cover grayscale opacity-50" 
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYaGed8xly6904KuaucQnQYn3iNbq2ybkYRnigu48txdvBs3jmfN7MfuypGDdhLSCoxSFps4Hg7ZdAex4McoVCyGbwOX2KMT53rcLivC21uNabYLj3_9zCfbjWb5W_RJyjyOxK66i74aQqXyBOPVO501_wNiNPIwoldySDPy7qfrZEowggUGzaeVP9wzovHVEm-4UmzAllp_rYctc8-cjqJRLaLDqRZKh1UgwUPpo9akKUnj1mnfbCR80rkTxpaFAYnttQfvrhMW5y" 
-                        alt="Editorial Model" 
+                    <img
+                        className="w-full h-full object-cover grayscale opacity-50"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYaGed8xly6904KuaucQnQYn3iNbq2ybkYRnigu48txdvBs3jmfN7MfuypGDdhLSCoxSFps4Hg7ZdAex4McoVCyGbwOX2KMT53rcLivC21uNabYLj3_9zCfbjWb5W_RJyjyOxK66i74aQqXyBOPVO501_wNiNPIwoldySDPy7qfrZEowggUGzaeVP9wzovHVEm-4UmzAllp_rYctc8-cjqJRLaLDqRZKh1UgwUPpo9akKUnj1mnfbCR80rkTxpaFAYnttQfvrhMW5y"
+                        alt="Editorial Model"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
                 </div>
@@ -68,35 +68,35 @@ const Login = () => {
             </section>
 
             {/* Right Side: Clean Form Card */}
-            <section className="flex flex-col items-center justify-center w-full lg:w-1/2 bg-surface p-6 overflow-hidden">
-                <div className="w-full max-w-[400px] space-y-8">
+            <section className="flex flex-col items-center justify-center w-full lg:w-1/2 bg-surface p-8 md:p-12 lg:p-24 overflow-y-auto">
+                <div className="w-full max-w-[440px] space-y-12">
                     {/* Toggle Switch */}
                     <div className="flex justify-between items-center p-1 bg-zinc-100 rounded-xl">
-                        <button className="flex-1 py-2 px-4 rounded-lg bg-white shadow-sm font-label-bold text-[10px] uppercase tracking-widest text-on-surface transition-all">
+                        <button className="flex-1 py-3 px-4 rounded-lg bg-white shadow-sm font-label-bold text-[10px] uppercase tracking-widest text-on-surface transition-all">
                             Login
                         </button>
-                        <button 
+                        <button
                             onClick={() => navigate('/register')}
-                            className="flex-1 py-2 px-4 rounded-lg text-zinc-400 hover:text-on-surface font-label-bold text-[10px] uppercase tracking-widest transition-all"
+                            className="flex-1 py-3 px-4 rounded-lg text-zinc-400 hover:text-on-surface font-label-bold text-[10px] uppercase tracking-widest transition-all"
                         >
                             Register
                         </button>
                     </div>
 
                     {/* Welcome Text */}
-                    <div className="space-y-2">
-                        <h1 className="font-headline-lg text-3xl text-on-surface">Welcome Back.</h1>
-                        <p className="font-body-md text-xs text-zinc-500">Access your curated collections and orders.</p>
+                    <div className="space-y-4">
+                        <h1 className="font-headline-lg text-4xl text-on-surface">Welcome Back.</h1>
+                        <p className="font-body-md text-zinc-500">Access your curated collections and orders.</p>
                     </div>
 
                     {/* Form Section */}
-                    <form onSubmit={handleSubmit} className="space-y-5">
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-4">
                             <div className="group relative">
-                                <label className="font-label-bold text-[9px] uppercase tracking-widest text-zinc-400 mb-1 block">Email Address</label>
-                                <input 
-                                    className="w-full bg-zinc-50 border-0 border-b-2 border-transparent focus:border-on-surface focus:ring-0 rounded-lg p-4 transition-all placeholder:text-zinc-300 text-sm" 
-                                    placeholder="name@example.com" 
+                                <label className="font-label-bold text-[10px] uppercase tracking-widest text-zinc-400 mb-2 block">Email Address</label>
+                                <input
+                                    className="w-full bg-zinc-50 border-0 border-b-2 border-transparent focus:border-on-surface focus:ring-0 rounded-lg p-4 transition-all placeholder:text-zinc-300"
+                                    placeholder="name@example.com"
                                     type="email"
                                     name="email"
                                     value={formData.email}
@@ -105,13 +105,13 @@ const Login = () => {
                                 />
                             </div>
                             <div className="group relative">
-                                <div className="flex justify-between items-center mb-1">
-                                    <label className="font-label-bold text-[9px] uppercase tracking-widest text-zinc-400 block">Password</label>
-                                    <button type="button" className="text-[9px] font-label-bold uppercase tracking-widest text-zinc-400 hover:text-on-surface underline">Forgot?</button>
+                                <div className="flex justify-between items-center mb-2">
+                                    <label className="font-label-bold text-[10px] uppercase tracking-widest text-zinc-400 block">Password</label>
+                                    <button type="button" className="text-[10px] font-label-bold uppercase tracking-widest text-zinc-400 hover:text-on-surface underline">Forgot?</button>
                                 </div>
-                                <input 
-                                    className="w-full bg-zinc-50 border-0 border-b-2 border-transparent focus:border-on-surface focus:ring-0 rounded-lg p-4 transition-all placeholder:text-zinc-300 text-sm" 
-                                    placeholder="••••••••" 
+                                <input
+                                    className="w-full bg-zinc-50 border-0 border-b-2 border-transparent focus:border-on-surface focus:ring-0 rounded-lg p-4 transition-all placeholder:text-zinc-300"
+                                    placeholder="••••••••"
                                     type="password"
                                     name="password"
                                     value={formData.password}
@@ -121,23 +121,23 @@ const Login = () => {
                             </div>
                         </div>
                         {/* CTA Button */}
-                        <button className="w-full bg-primary text-on-primary py-4 rounded-xl font-label-bold text-[10px] uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg" type="submit">
+                        <button className="w-full bg-primary text-on-primary py-5 rounded-xl font-label-bold text-[10px] uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl hover:shadow-2xl" type="submit">
                             Sign In
                         </button>
                     </form>
 
                     {/* Social Logins */}
-                    <div className="space-y-6">
+                    <div className="space-y-8">
                         <div className="relative flex items-center">
                             <div className="flex-grow border-t border-zinc-100"></div>
-                            <span className="flex-shrink mx-3 font-label-bold text-[8px] uppercase tracking-[0.2em] text-zinc-300">OR CONTINUE WITH</span>
+                            <span className="flex-shrink mx-4 font-label-bold text-[9px] uppercase tracking-[0.2em] text-zinc-300">OR CONTINUE WITH</span>
                             <div className="flex-grow border-t border-zinc-100"></div>
                         </div>
                         <ContinueWithGoogle />
                     </div>
 
                     {/* Footer Text */}
-                    <p className="text-center text-zinc-400 text-[9px] uppercase tracking-widest">
+                    <p className="text-center text-zinc-400 text-[11px] uppercase tracking-widest pt-8">
                         By continuing, you agree to the AURA LUXE <button className="underline hover:text-on-surface">Terms</button> and <button className="underline hover:text-on-surface">Privacy</button>.
                     </p>
                 </div>
@@ -147,3 +147,5 @@ const Login = () => {
 };
 
 export default Login;
+
+
