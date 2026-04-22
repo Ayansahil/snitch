@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { useSelector ,useDispatch } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useCart } from '../hooks/useCart';
 import CartItem from '../components/CartItem';
-import { updateQuantity as updateQuantityAction, removeItem as removeItemAction } from '../state/cart.slice';
+import Navbar from '../../products/components/Navbar';
+import Footer from '../../../components/common/Footer';
 
 const Cart = () => {
     const cartItems = useSelector(state => state.cart.items);
     const { handleGetCart, handleAddItem, handleRemoveItem, handleUpdateItemQuantity } = useCart();
     const navigate = useNavigate();
-
     const [loading, setLoading] = useState(true);
     const [processingKey, setProcessingKey] = useState(null);
 
@@ -36,26 +36,12 @@ const Cart = () => {
                 productId: item.product?._id,
                 variantId: item.variant || 'default',
             });
-            // Auto-sync is handled by the hook
         } finally {
             setProcessingKey(null);
         }
     }
 
-    const dispatch = useDispatch();
-
-    const updateQuantity = (productId, variantId, newQty) => {
-        // Redux slice update is still useful for optimistic feel, 
-        // but handleUpdateItemQuantity below will overwrite it with DB truth.
-        dispatch(updateQuantityAction({
-            productId,
-            variantId,
-            quantity: newQty
-        }));
-    };
-
     const removeItem = async (productId, variantId) => {
-        // Persistent removal from DB
         const key = `${productId}_${variantId}`;
         setProcessingKey(key);
         try {
@@ -63,16 +49,18 @@ const Cart = () => {
                 productId,
                 variantId,
             });
-            // Auto-sync is handled by the hook
         } finally {
             setProcessingKey(null);
         }
     };
 
-    const handleDecrease = async (productId, variantId, quantity) => {
+    const handleDecrease = async (item) => {
+        const productId = item.product?._id;
+        const variantId = item.variant || 'default';
+        const quantity = item.quantity;
+        const key = getKey(item);
+
         if (quantity > 1) {
-            // Persistent Update API (STRICT IMPLEMENTATION)
-            const key = `${productId}_${variantId}`;
             setProcessingKey(key);
             try {
                 await handleUpdateItemQuantity({
@@ -89,7 +77,6 @@ const Cart = () => {
     };
 
     const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-
     const totalPrice = cartItems.reduce((sum, item) => {
         const amount = item.price?.amount || item.product?.price?.amount || 0;
         return sum + amount * item.quantity;
@@ -100,175 +87,100 @@ const Cart = () => {
         || 'INR';
 
     return (
-        <>
-            {/* Google Fonts */}
-            <link
-                href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap"
-                rel="stylesheet"
-            />
+        <div className="bg-background text-on-background font-body-md selection:bg-secondary-fixed selection:text-on-secondary-fixed min-h-screen">
+            <Navbar />
 
-            <div
-                className="min-h-screen selection:bg-[#C9A96E]/30"
-                style={{ backgroundColor: '#fbf9f6', fontFamily: "'Inter', sans-serif" }}
-            >
-                {/* ── Minimal Top Header ── */}
-                <div className="px-8 lg:px-16 xl:px-24 pt-10 pb-6 flex items-center justify-between border-b" style={{ borderColor: '#e4e2df' }}>
-                    <Link to="/"
-                        className="text-sm font-medium tracking-[0.35em] uppercase hover:opacity-80 transition-opacity"
-                        style={{ fontFamily: "'Cormorant Garamond', serif", color: '#C9A96E' }}
-                    >
-                        Snitch.
-                    </Link>
-                </div>
+            <main className="pt-32 pb-section-gap px-8 md:px-12 max-w-[1280px] mx-auto">
+                {/* Cart Title */}
+                <header className="mb-12">
+                    <h1 className="font-headline-lg text-headline-lg text-on-surface">Your Bag</h1>
+                    <p className="font-body-md text-on-surface-variant mt-2">
+                        {totalItems} {totalItems === 1 ? 'item' : 'items'} in your bag. Estimated shipping will be calculated at checkout.
+                    </p>
+                </header>
 
-                <div className="max-w-5xl mx-auto px-8 lg:px-16 xl:px-24 pb-32">
-                    {/* ── Back Navigation ── */}
-                    <div className="pt-8">
-                        <button
-                            onClick={() => navigate("/")}
-                            className="text-[10px] uppercase tracking-[0.2em] font-medium flex items-center gap-2 transition-colors hover:text-[#C9A96E]"
-                            style={{ color: '#7A6E63' }}
+                {loading ? (
+                    <div className="py-24 text-center">
+                        <span className="text-[10px] uppercase tracking-[0.2em] font-medium animate-pulse text-zinc-400">Synchronizing Archive...</span>
+                    </div>
+                ) : cartItems.length === 0 ? (
+                    <div className="py-24 text-center flex flex-col items-center">
+                        <span className="text-[10px] uppercase tracking-[0.2em] font-medium mb-4 text-secondary">Empty</span>
+                        <p className="max-w-md mx-auto text-lg leading-relaxed mb-10 font-headline-md text-zinc-500">
+                            Your bag is currently empty. Explore our latest pieces and add them to your collection.
+                        </p>
+                        <button 
+                            onClick={() => navigate('/')}
+                            className="bg-primary text-on-primary px-10 py-4 font-label-bold uppercase tracking-widest hover:scale-105 transition-all shadow-xl"
                         >
-                            <span>←</span> Back to Archive
+                            Explore Collection
                         </button>
                     </div>
-
-                    {/* ── Page Header ── */}
-                    <div className="pt-10 pb-10">
-                        <span
-                            className="text-[10px] uppercase tracking-[0.24em] font-medium mb-3 block"
-                            style={{ color: '#C9A96E' }}
-                        >
-                            {totalItems} {totalItems === 1 ? 'Piece' : 'Pieces'}
-                        </span>
-                        <h1
-                            className="text-4xl lg:text-5xl font-light leading-tight"
-                            style={{ fontFamily: "'Cormorant Garamond', serif", color: '#1b1c1a' }}
-                        >
-                            Your Cart
-                        </h1>
-                        <div className="mt-4 w-14 h-px" style={{ backgroundColor: '#C9A96E' }} />
-                    </div>
-
-                    {loading ? (
-                        <div className="py-32 text-center">
-                            <p
-                                className="text-[10px] uppercase tracking-[0.2em] font-medium animate-pulse"
-                                style={{ color: '#B5ADA3' }}
-                            >
-                                Synchronizing with archive…
-                            </p>
+                ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                        {/* Left Column: Cart Items */}
+                        <div className="lg:col-span-8 flex flex-col gap-6">
+                            {cartItems.map((item) => (
+                                <CartItem 
+                                    key={getKey(item)}
+                                    item={item}
+                                    quantity={item.quantity}
+                                    onIncrease={handleIncrease}
+                                    onDecrease={handleDecrease}
+                                    onRemove={removeItem}
+                                    currency={currency}
+                                    isProcessing={processingKey === getKey(item)}
+                                />
+                            ))}
                         </div>
-                    ) : cartItems.length === 0 ? (
-                        /* ── Empty State ── */
-                        <div className="py-24 text-center flex flex-col items-center">
-                            <span
-                                className="text-[10px] uppercase tracking-[0.2em] font-medium mb-4"
-                                style={{ color: '#C9A96E' }}
-                            >
-                                Empty
-                            </span>
-                            <p
-                                className="max-w-md mx-auto text-lg leading-relaxed mb-10"
-                                style={{ fontFamily: "'Cormorant Garamond', serif", color: '#7A6E63' }}
-                            >
-                                Your cart holds nothing yet. Discover our curated archive and add pieces you love.
-                            </p>
-                            <Link
-                                to="/"
-                                className="py-4 px-8 text-[11px] uppercase tracking-[0.3em] font-medium transition-all duration-300"
-                                style={{ backgroundColor: '#1b1c1a', color: '#fbf9f6' }}
-                                onMouseEnter={e => {
-                                    e.currentTarget.style.backgroundColor = '#C9A96E';
-                                    e.currentTarget.style.color = '#1b1c1a';
-                                }}
-                                onMouseLeave={e => {
-                                    e.currentTarget.style.backgroundColor = '#1b1c1a';
-                                    e.currentTarget.style.color = '#fbf9f6';
-                                }}
-                            >
-                                Explore the Archive
-                            </Link>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 items-start">
-                            {/* ── Cart Items ── */}
-                            <div className="flex-1 w-full">
-                                <div className="divide-y" style={{ borderColor: '#e4e2df' }}>
-                                    {cartItems.map((item) => (
-                                        <CartItem 
-                                            key={getKey(item)}
-                                            item={item}
-                                            quantity={item.quantity}
-                                            onIncrease={handleIncrease}
-                                            onDecrease={(p, v, q) => handleDecrease(p, v, q)}
-                                            currency={currency}
-                                            isProcessing={processingKey === getKey(item)}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
 
-                            {/* ── Order Summary ── */}
-                            <div
-                                className="w-full lg:w-72 flex-shrink-0 border p-8 sticky top-10"
-                                style={{ borderColor: '#e4e2df', backgroundColor: '#f5f3f0' }}
-                            >
-                                <h2
-                                    className="text-xl font-light mb-6"
-                                    style={{ fontFamily: "'Cormorant Garamond', serif", color: '#1b1c1a' }}
-                                >
-                                    Order Summary
-                                </h2>
-                                <div className="flex flex-col gap-4 text-[11px] uppercase tracking-[0.15em]">
-                                    <div className="flex justify-between" style={{ color: '#7A6E63' }}>
-                                        <span>Items</span>
-                                        <span>{totalItems}</span>
+                        {/* Right Column: Order Summary */}
+                        <aside className="lg:col-span-4 sticky top-32">
+                            <div className="bg-white p-8 rounded-xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.08)] border border-zinc-50">
+                                <h2 className="font-headline-md text-headline-md text-on-surface mb-8">Order Summary</h2>
+                                <div className="space-y-4 mb-8">
+                                    <div className="flex justify-between font-body-md">
+                                        <span className="text-on-surface-variant">Subtotal</span>
+                                        <span className="text-on-surface font-bold">{currency} {totalPrice.toLocaleString()}</span>
                                     </div>
-                                    <div className="h-px w-full" style={{ backgroundColor: '#e4e2df' }} />
-                                    <div className="flex justify-between font-medium" style={{ color: '#1b1c1a' }}>
-                                        <span>Subtotal</span>
-                                        <span>{currency} {totalPrice.toLocaleString()}</span>
+                                    <div className="flex justify-between font-body-md">
+                                        <span className="text-on-surface-variant">Shipping</span>
+                                        <span className="text-on-surface font-bold text-xs uppercase">Calculated at checkout</span>
                                     </div>
-                                    <p className="text-[10px] normal-case tracking-normal mt-1" style={{ color: '#B5ADA3' }}>
-                                        Shipping calculated at checkout.
-                                    </p>
+                                    <div className="pt-6 border-t border-zinc-100 flex justify-between items-baseline">
+                                        <span className="font-headline-md text-headline-md">Total</span>
+                                        <span className="font-headline-lg text-headline-lg text-primary">
+                                            {currency} {totalPrice.toLocaleString()}
+                                        </span>
+                                    </div>
                                 </div>
-
-                                <button
-                                    className="mt-8 w-full py-4 text-[11px] uppercase tracking-[0.25em] font-medium transition-all duration-300"
-                                    style={{
-                                        backgroundColor: '#1b1c1a',
-                                        color: '#fbf9f6',
-                                        fontFamily: "'Inter', sans-serif"
-                                    }}
-                                    onMouseEnter={e => {
-                                        e.currentTarget.style.backgroundColor = '#C9A96E';
-                                        e.currentTarget.style.color = '#1b1c1a';
-                                    }}
-                                    onMouseLeave={e => {
-                                        e.currentTarget.style.backgroundColor = '#1b1c1a';
-                                        e.currentTarget.style.color = '#fbf9f6';
-                                    }}
-                                >
+                                <button className="w-full py-5 bg-primary text-on-primary font-label-bold text-label-bold uppercase rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl hover:shadow-2xl mb-4">
                                     Proceed to Checkout
                                 </button>
+                                <div className="flex items-center justify-center gap-2 text-zinc-400 text-[10px] uppercase font-bold tracking-widest">
+                                    <span className="material-symbols-outlined text-sm">lock</span>
+                                    Secure encrypted checkout
+                                </div>
+                                
+                                {/* Promo Code */}
+                                <div className="mt-8 pt-8 border-t border-zinc-100">
+                                    <p className="font-label-bold text-[10px] uppercase tracking-widest text-zinc-400 mb-4">Promo Code</p>
+                                    <div className="flex gap-2">
+                                        <input 
+                                            className="flex-1 bg-zinc-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-primary/10" 
+                                            placeholder="Enter code" 
+                                            type="text"
+                                        />
+                                        <button className="px-6 border-2 border-primary font-label-bold text-[10px] uppercase rounded-lg hover:bg-primary hover:text-white transition-all">Apply</button>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* ── Footer ── */}
-                <footer className="border-t py-12 text-center" style={{ borderColor: '#e4e2df' }}>
-                    <span
-                        className="text-[10px] uppercase tracking-[0.35em]"
-                        style={{ fontFamily: "'Cormorant Garamond', serif", color: '#C9A96E' }}
-                    >
-                        Snitch. © {new Date().getFullYear()}
-                    </span>
-                </footer>
-            </div>
-        </>
+                        </aside>
+                    </div>
+                )}
+            </main>
+            <Footer />
+        </div>
     );
 };
 

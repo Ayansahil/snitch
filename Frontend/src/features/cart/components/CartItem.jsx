@@ -6,6 +6,7 @@ const CartItem = ({
     quantity, 
     onIncrease, 
     onDecrease, 
+    onRemove,
     currency,
     isProcessing 
 }) => {
@@ -14,7 +15,6 @@ const CartItem = ({
     const amount = item.price?.amount || item.product?.price?.amount || 0;
     const itemCurrency = item.price?.currency || item.product?.price?.currency || currency;
 
-    // Safe handling of variant attributes
     const getVariantLabel = () => {
         const variantObj = item.product?.variants?.find(
             v => v._id?.toString() === item.variant?.toString()
@@ -26,58 +26,39 @@ const CartItem = ({
     };
 
     return (
-        <div className="py-8 flex gap-6 items-start">
-            {/* Product Image */}
-            <div
-                className="w-24 h-32 flex-shrink-0 overflow-hidden"
-                style={{ backgroundColor: '#f5f3f0' }}
-            >
-                <img
-                    src={imageUrl}
-                    alt={title}
-                    className="w-full h-full object-cover"
+        <div className="flex flex-col md:flex-row gap-6 bg-white p-6 rounded-xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] border border-zinc-50 group hover:border-zinc-200 transition-all">
+            <div className="w-full md:w-48 h-64 md:h-48 bg-surface-container rounded-lg overflow-hidden flex items-center justify-center">
+                <img 
+                    className="w-full h-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-110" 
+                    src={imageUrl} 
+                    alt={title} 
                 />
             </div>
-
-            {/* Details */}
-            <div className="flex-1 flex flex-col gap-2">
-                <h3
-                    className="text-xl font-light leading-snug"
-                    style={{ fontFamily: "'Cormorant Garamond', serif", color: '#1b1c1a' }}
-                >
-                    {title}
-                </h3>
-
-                <p
-                    className="text-[10px] uppercase tracking-[0.15em]"
-                    style={{ color: '#B5ADA3' }}
-                >
-                    {getVariantLabel()}
-                </p>
-
-                <p
-                    className="text-[11px] uppercase tracking-[0.2em] font-medium mt-1"
-                    style={{ color: '#7A6E63' }}
-                >
-                    {itemCurrency} {(amount * quantity).toLocaleString()}
-                </p>
-            </div>
-
-            {/* Quantity Controls */}
-            <div className="flex flex-col items-end gap-3 flex-shrink-0">
-                <span
-                    className="text-[10px] uppercase tracking-[0.15em]"
-                    style={{ color: '#B5ADA3' }}
-                >
-                    {itemCurrency} {amount.toLocaleString()} each
-                </span>
-
-                <QuantityControl 
-                    quantity={quantity}
-                    onIncrease={() => onIncrease(item)}
-                    onDecrease={() => onDecrease(item.product?._id, item.variant || 'default', quantity)}
-                    isLoading={isProcessing}
-                />
+            <div className="flex-1 flex flex-col justify-between">
+                <div>
+                    <div className="flex justify-between items-start">
+                        <h3 className="font-headline-md text-xl text-on-surface">{title}</h3>
+                        <p className="font-headline-md text-xl">{itemCurrency} {amount.toLocaleString()}</p>
+                    </div>
+                    <div className="mt-2 space-y-1">
+                        <p className="font-label-bold text-[10px] text-zinc-400 uppercase tracking-widest">{getVariantLabel()}</p>
+                    </div>
+                </div>
+                <div className="flex justify-between items-end mt-8">
+                    <QuantityControl 
+                        quantity={quantity}
+                        onIncrease={() => onIncrease(item)}
+                        onDecrease={() => onDecrease(item)}
+                        isLoading={isProcessing}
+                    />
+                    <button 
+                        onClick={() => onRemove(item.product?._id, item.variant || 'default')}
+                        className="flex items-center gap-2 text-error font-label-bold text-[10px] uppercase tracking-widest hover:opacity-70 transition-opacity"
+                    >
+                        <span className="material-symbols-outlined text-sm">delete</span>
+                        Remove
+                    </button>
+                </div>
             </div>
         </div>
     );

@@ -2,24 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useSelector, useDispatch } from 'react-redux';
 import { setSearchQuery } from '../state/product.slice';
+import { useAuth } from '../../auth/hooks/useAuth';
 
 const Navbar = () => {
     const user = useSelector(state => state.auth.user);
     const cartItems = useSelector(state => state.cart.items);
     const searchQuery = useSelector(state => state.product.searchQuery);
+    const { handleLogout } = useAuth();
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const [localSearch, setLocalSearch] = useState(searchQuery);
 
-    // Total quantity for the badge
     const totalQuantity = cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
 
-    // Sync local search with global search query (useful if cleared elsewhere)
     useEffect(() => {
         setLocalSearch(searchQuery);
     }, [searchQuery]);
 
-    // Handle debounced search update
     useEffect(() => {
         const timer = setTimeout(() => {
             dispatch(setSearchQuery(localSearch));
@@ -32,88 +31,70 @@ const Navbar = () => {
     };
 
     return (
-        <nav 
-            className="px-8 lg:px-16 xl:px-24 pt-10 pb-6 flex items-center justify-between border-b sticky top-0 z-50 transition-all duration-300" 
-            style={{ borderColor: '#e4e2df', backgroundColor: '#fbf9f6f2', backdropFilter: 'blur(8px)' }}
-        >
-            {/* ── Logo ── */}
-            <Link to="/"
-                className="text-sm font-medium tracking-[0.35em] uppercase hover:opacity-80 transition-opacity flex-shrink-0"
-                style={{ fontFamily: "'Cormorant Garamond', serif", color: '#C9A96E' }}
-            >
-                Snitch.
-            </Link>
+        <nav className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-2xl border-b border-zinc-100 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]">
+            <div className="flex justify-between items-center px-8 py-6 w-full max-w-[1440px] mx-auto">
+                {/* Brand */}
+                <Link to="/" className="text-2xl font-black tracking-tighter text-zinc-900">AURA LUXE</Link>
+                
+                {/* Navigation Links */}
+                <div className="hidden md:flex items-center space-x-8">
+                    <Link to="/" className="font-sans text-xs font-bold uppercase tracking-widest text-zinc-900 border-b-2 border-zinc-900 pb-1">Shop</Link>
+                    <Link to="/" className="font-sans text-xs font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-colors">Collections</Link>
+                    <Link to="/" className="font-sans text-xs font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-colors">Archive</Link>
+                    <Link to="/" className="font-sans text-xs font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-colors">Runway</Link>
+                </div>
 
-            {/* ── Search Bar (Issue 4: Center position) ── */}
-            <div className="flex-1 max-w-md mx-8 relative">
-                <input
-                    type="text"
-                    value={localSearch}
-                    onChange={handleSearchChange}
-                    placeholder="Search curated pieces…"
-                    className="w-full py-2 pl-4 pr-10 text-[11px] tracking-[0.08em] border bg-transparent outline-none transition-colors duration-200 placeholder:uppercase placeholder:tracking-[0.18em]"
-                    style={{
-                        borderColor: localSearch ? '#C9A96E' : '#d0c5b5',
-                        color: '#1b1c1a',
-                        fontFamily: "'Inter', sans-serif",
-                    }}
-                />
-                <svg
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-                    style={{ color: '#B5ADA3' }}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.4"
-                        d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-                </svg>
-            </div>
-
-            {/* ── Right Icons (Issue 3: Icon replacement + count) ── */}
-            <div className="flex gap-8 items-center text-[10px] uppercase tracking-[0.2em] font-medium flex-shrink-0" style={{ color: '#7A6E63' }}>
-                {user ? (
-                    <div className="hidden md:flex gap-6 items-center">
-                        <span style={{ color: '#1b1c1a' }}>{user.fullname}</span>
-                        {user.role === 'seller' && (
-                            <Link to="/seller/dashboard" className="transition-colors hover:text-[#C9A96E]">Dashboard</Link>
-                        )}
+                {/* Right Side Tools */}
+                <div className="flex items-center gap-6">
+                    {/* Search Input */}
+                    <div className="relative hidden lg:block">
+                        <input 
+                            type="text"
+                            value={localSearch}
+                            onChange={handleSearchChange}
+                            placeholder="Search"
+                            className="bg-zinc-50 border-none rounded-full px-6 py-2 text-sm focus:ring-1 focus:ring-primary w-64 transition-all"
+                        />
                     </div>
-                ) : (
-                    <div className="hidden md:flex gap-6 items-center">
-                        <Link to="/login" className="transition-colors hover:text-[#C9A96E]">Sign In</Link>
-                        <Link to="/register" className="transition-colors hover:text-[#C9A96E]">Sign Up</Link>
-                    </div>
-                )}
-
-                {/* Cart Icon with Badge */}
-                <Link to="/cart" className="relative group p-1">
-                    <svg 
-                        width="20" 
-                        height="20" 
-                        viewBox="0 0 24 24" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        strokeWidth="1.5" 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round"
-                        className="transition-colors group-hover:text-[#C9A96E]"
-                        style={{ color: '#1b1c1a' }}
-                    >
-                        <circle cx="9" cy="21" r="1"></circle>
-                        <circle cx="20" cy="21" r="1"></circle>
-                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                    </svg>
                     
-                    {totalQuantity > 0 && (
-                        <span 
-                            className="absolute -top-1 -right-1 min-w-[16px] h-[16px] flex items-center justify-center text-[9px] font-bold rounded-full text-white px-1"
-                            style={{ backgroundColor: '#C9A96E' }}
-                        >
-                            {totalQuantity}
-                        </span>
-                    )}
-                </Link>
+                    <div className="flex items-center gap-5">
+                        {/* User / Auth */}
+                        {user ? (
+                            <div className="flex items-center gap-4">
+                                <Link to={user.role === 'seller' ? "/seller/dashboard" : "/profile"} className="hover:scale-105 transition-transform duration-300">
+                                    <span className="material-symbols-outlined text-zinc-900">person</span>
+                                </Link>
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 hidden sm:inline">{user.fullname.split(' ')[0]}</span>
+                                <button 
+                                    onClick={handleLogout}
+                                    className="hover:scale-105 transition-transform duration-300 text-zinc-400 hover:text-zinc-900"
+                                    title="Logout"
+                                >
+                                    <span className="material-symbols-outlined text-lg">logout</span>
+                                </button>
+                            </div>
+                        ) : (
+                            <Link to="/login" className="hover:scale-105 transition-transform duration-300">
+                                <span className="material-symbols-outlined text-zinc-900">person</span>
+                            </Link>
+                        )}
+
+                        {/* Wishlist Placeholder */}
+                        <button className="hover:scale-105 transition-transform duration-300 active:scale-95">
+                            <span className="material-symbols-outlined text-zinc-900">favorite</span>
+                        </button>
+
+                        {/* Cart */}
+                        <Link to="/cart" className="hover:scale-105 transition-transform duration-300 active:scale-95 relative">
+                            <span className="material-symbols-outlined text-zinc-900">shopping_bag</span>
+                            {totalQuantity > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                                    {totalQuantity}
+                                </span>
+                            )}
+                        </Link>
+                    </div>
+                </div>
             </div>
         </nav>
     );
