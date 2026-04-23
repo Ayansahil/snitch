@@ -33,48 +33,32 @@ export const addToCart = async (req, res) => {
   );
 
   if (isProductAlreadyInCart) {
-    const quantityInCart = cart.items.find(
+    const item = cart.items.find(
       (item) =>
         item.product.toString() === productId &&
         (variantId === "default" ? !item.variant : item.variant?.toString() === variantId),
-    ).quantity;
+    );
 
-    if (quantityInCart + quantity > stock) {
+    if (item.quantity + quantity > stock) {
       return res.status(400).json({
-        message: `Only ${stock} items left in stock. and you already have ${quantityInCart} items in your cart`,
+        message: `Only ${stock} items left in stock. and you already have ${item.quantity} items in your cart`,
         success: false,
       });
     }
-    const updateQuery = { user: req.user._id, "items.product": productId };
-    if (variantId !== "default") {
-        updateQuery["items.variant"] = variantId;
-    } else {
-        updateQuery["items.variant"] = { $exists: false };
+
+    item.quantity += quantity;
+
+    if (item.quantity <= 0) {
+      cart.items = cart.items.filter((i) => i !== item);
     }
 
-        const updatedCart = await cartModel.findOneAndUpdate(
-            updateQuery,
-            { $inc: { "items.$.quantity": quantity } },
-            { new: true }
-        )
+    await cart.save();
 
-        // Check if quantity dropped to 0 or below and cleanup
-        const itemIndex = updatedCart.items.findIndex(i => 
-            i.product.toString() === productId && 
-            (variantId === "default" ? !i.variant : i.variant?.toString() === variantId)
-        );
-
-        if (itemIndex !== -1 && updatedCart.items[itemIndex].quantity <= 0) {
-            await cartModel.findOneAndUpdate(
-                { user: req.user._id },
-                { $pull: { items: { product: productId, variant: variantId === "default" ? { $exists: false } : variantId } } }
-            );
-        }
-
-        return res.status(200).json({
-            message: "Cart updated successfully",
-            success: true
-        })
+    return res.status(200).json({
+      message: "Cart updated successfully",
+      success: true,
+      cart
+    });
   }
 
       if (quantity > stock) {
@@ -83,11 +67,14 @@ export const addToCart = async (req, res) => {
             success: false
         })
     }
-        cart.items.push({
-        product: productId,
-        variant: variantId !== "default" ? variantId : undefined,
-        quantity,
-        price: product.price
+    const variantObj = product.variants.find(v => v._id.toString() === variantId);
+    const itemPrice = (variantId !== "default" && variantObj?.price) ? variantObj.price : product.price;
+
+    cart.items.push({
+      product: productId,
+      variant: variantId !== "default" ? variantId : undefined,
+      quantity,
+      price: itemPrice
     })
 
     await cart.save()

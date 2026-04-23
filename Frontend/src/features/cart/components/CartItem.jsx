@@ -12,39 +12,93 @@ const CartItem = ({
 }) => {
     const imageUrl = item.product?.images?.[0]?.url || '/snitch_editorial_warm.png';
     const title = item.product?.title || 'Unknown Product';
-    const amount = item.price?.amount || item.product?.price?.amount || 0;
     const itemCurrency = item.price?.currency || item.product?.price?.currency || currency;
-
-    const getVariantLabel = () => {
-        const variantObj = item.product?.variants?.find(
+    const getVariantObj = () => {
+        return item.product?.variants?.find(
             v => v._id?.toString() === item.variant?.toString()
         );
+    };
+
+    const variantObj = getVariantObj();
+    const currentPrice = variantObj?.price?.amount || item.product?.price?.amount || 0;
+    const snapshotPrice = item.price?.amount || 0;
+    const diff = currentPrice - snapshotPrice; 
+    const isPriceIncreased = diff > 0;
+    const isPriceDecreased = diff < 0;
+    
+    const stock = variantObj?.stock ?? item.product?.variants?.[0]?.stock ?? 0;
+
+    const getVariantLabel = () => {
         if (!variantObj || !variantObj.attributes) return 'Default Variant';
         return Object.entries(variantObj.attributes)
-            .map(([k, v]) => `${k}: ${v}`)
+            .map(([k, v]) => v)
             .join(' / ');
     };
 
     return (
-        <div className="flex flex-col md:flex-row gap-6 bg-white p-6 rounded-xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] border border-zinc-50 group hover:border-zinc-200 transition-all">
-            <div className="w-full md:w-48 h-64 md:h-48 bg-surface-container rounded-lg overflow-hidden flex items-center justify-center">
+        <div className="flex flex-col md:flex-row gap-8 bg-surface-container-lowest p-8 rounded-2xl shadow-sm border border-surface-container hover:shadow-md transition-all duration-300 group">
+            {/* Product Image */}
+            <div className="w-full md:w-56 h-72 md:h-56 bg-surface-container rounded-xl overflow-hidden relative shrink-0">
                 <img 
-                    className="w-full h-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-110" 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                     src={imageUrl} 
                     alt={title} 
                 />
-            </div>
-            <div className="flex-1 flex flex-col justify-between">
-                <div>
-                    <div className="flex justify-between items-start">
-                        <h3 className="font-headline-md text-xl text-on-surface">{title}</h3>
-                        <p className="font-headline-md text-xl">{itemCurrency} {amount.toLocaleString()}</p>
+                {isPriceDecreased && (
+                    <div className="absolute top-4 left-4 bg-secondary text-on-secondary px-3 py-1 rounded-full text-[10px] font-label-bold uppercase tracking-wider">
+                        Price Drop
                     </div>
-                    <div className="mt-2 space-y-1">
-                        <p className="font-label-bold text-[10px] text-zinc-400 uppercase tracking-widest">{getVariantLabel()}</p>
+                )}
+            </div>
+
+            {/* Product Details */}
+            <div className="flex-1 flex flex-col">
+                <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+                    <div className="space-y-3">
+                        <h3 className="font-headline-md text-2xl text-on-surface tracking-tight">{title}</h3>
+                        
+                        <div className="flex flex-wrap gap-2">
+                            <span className="px-3 py-1 bg-tertiary-fixed-dim text-on-tertiary-fixed-variant text-[10px] font-label-bold uppercase tracking-widest rounded-md">
+                                {getVariantLabel()}
+                            </span>
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-baseline gap-3">
+                                <span className="font-headline-md text-xl text-on-surface">
+                                    {itemCurrency} {currentPrice.toLocaleString()}
+                                </span>
+                                {(isPriceDecreased || isPriceIncreased) && (
+                                    <span className="font-label-bold text-sm text-zinc-400 line-through">
+                                        {itemCurrency} {snapshotPrice.toLocaleString()}
+                                    </span>
+                                )}
+                            </div>
+                            <p className="font-label-bold text-[10px] text-zinc-400 uppercase tracking-widest">
+                                {stock} IN STOCK
+                            </p>
+                        </div>
                     </div>
                 </div>
-                <div className="flex justify-between items-end mt-8">
+
+                {/* Price Change Notifications */}
+                <div className="mt-6">
+                    {isPriceDecreased && (
+                        <p className="font-label-bold text-[11px] uppercase tracking-widest text-secondary flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 bg-secondary rounded-full animate-pulse"></span>
+                            YOU WILL GET THIS AT {itemCurrency} {currentPrice.toLocaleString()} SAVE {Math.abs(diff).toLocaleString()}.
+                        </p>
+                    )}
+                    {isPriceIncreased && (
+                        <p className="font-label-bold text-[11px] uppercase tracking-widest text-error flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 bg-error rounded-full animate-pulse"></span>
+                            WARNING: THIS PRODUCT WILL COST YOU {Math.abs(diff).toLocaleString()} MORE.
+                        </p>
+                    )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex justify-between items-center mt-auto pt-8 border-t border-surface-container">
                     <QuantityControl 
                         quantity={quantity}
                         onIncrease={() => onIncrease(item)}
@@ -53,10 +107,10 @@ const CartItem = ({
                     />
                     <button 
                         onClick={() => onRemove(item.product?._id, item.variant || 'default')}
-                        className="flex items-center gap-2 text-error font-label-bold text-[10px] uppercase tracking-widest hover:opacity-70 transition-opacity"
+                        className="flex items-center gap-2 text-zinc-400 hover:text-error transition-colors group/remove"
                     >
-                        <span className="material-symbols-outlined text-sm">delete</span>
-                        Remove
+                        <span className="font-label-bold text-[10px] uppercase tracking-widest">Remove</span>
+                        <span className="material-symbols-outlined text-lg transition-transform group-hover/remove:scale-110">delete</span>
                     </button>
                 </div>
             </div>
