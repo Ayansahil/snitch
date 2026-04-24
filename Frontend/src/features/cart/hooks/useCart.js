@@ -1,6 +1,6 @@
 import { addItem, getCart, removeItem, updateItemQuantity } from "../services/cart.api"
 import { useDispatch } from "react-redux"
-import { setItems } from "../state/cart.slice"
+import { setCart } from "../state/cart.slice"
 
 
 export const useCart = () => {
@@ -30,7 +30,7 @@ export const useCart = () => {
 
     async function handleGetCart() {
         const data = await getCart()
-        dispatch(setItems(data.cart?.items || []))
+       dispatch(setCart(data.cart))  
         return data.cart
     }
 

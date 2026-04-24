@@ -13,20 +13,20 @@ const CartItem = ({
     const imageUrl = item.product?.images?.[0]?.url || '/snitch_editorial_warm.png';
     const title = item.product?.title || 'Unknown Product';
     const itemCurrency = item.price?.currency || item.product?.price?.currency || currency;
-    const getVariantObj = () => {
-        return item.product?.variants?.find(
-            v => v._id?.toString() === item.variant?.toString()
-        );
-    };
-
-    const variantObj = getVariantObj();
-    const currentPrice = variantObj?.price?.amount || item.product?.price?.amount || 0;
+    // Aggregation pipeline already unwound to matching variant, so item.product.variants IS the variant object
+    const variantObj = item.product?.variants || {};
+    
+    // Improved logic: Use variant price if it exists and is valid, otherwise fallback to product price
+    const currentPrice = (variantObj?.price?.amount && variantObj.price.amount > 0) 
+        ? variantObj.price.amount 
+        : (item.product?.price?.amount || 0);
+        
     const snapshotPrice = item.price?.amount || 0;
     const diff = currentPrice - snapshotPrice; 
     const isPriceIncreased = diff > 0;
     const isPriceDecreased = diff < 0;
     
-    const stock = variantObj?.stock ?? item.product?.variants?.[0]?.stock ?? 0;
+    const stock = variantObj?.stock ?? 0;
 
     const getVariantLabel = () => {
         if (!variantObj || !variantObj.attributes) return 'Default Variant';
@@ -74,7 +74,7 @@ const CartItem = ({
                                     </span>
                                 )}
                             </div>
-                            <p className="font-label-bold text-[10px] text-zinc-400 uppercase tracking-widest">
+                            <p className="font-label-bold text-[10px] text-zinc-500 uppercase tracking-widest">
                                 {stock} IN STOCK
                             </p>
                         </div>

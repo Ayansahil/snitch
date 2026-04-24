@@ -1,6 +1,7 @@
 import cartModel from "../models/cart.model.js";
 import productModel from "../models/product.model.js";
 import { stockOfVariant } from "../dao/product.dao.js";
+import mongoose from "mongoose";
 
 export const addToCart = async (req, res) => {
   const { productId, variantId } = req.params;
@@ -47,6 +48,11 @@ export const addToCart = async (req, res) => {
     }
 
     item.quantity += quantity;
+    
+    // Update price snapshot to current price for accurate price drop detection
+    const variantObj = product.variants.find(v => v._id.toString() === variantId);
+    const currentPrice = (variantId !== "default" && variantObj?.price) ? variantObj.price : product.price;
+    item.price = currentPrice;
 
     if (item.quantity <= 0) {
       cart.items = cart.items.filter((i) => i !== item);
@@ -54,10 +60,15 @@ export const addToCart = async (req, res) => {
 
     await cart.save();
 
+    const populatedCart = await cartModel.findById(cart._id).populate({
+        path: 'items.product',
+        model: productModel
+    });
+
     return res.status(200).json({
       message: "Cart updated successfully",
       success: true,
-      cart
+      cart: populatedCart
     });
   }
 
@@ -79,9 +90,16 @@ export const addToCart = async (req, res) => {
 
     await cart.save()
 
+    // Populate the cart before returning to ensure frontend has full product details
+    const populatedCart = await cartModel.findById(cart._id).populate({
+        path: 'items.product',
+        model: productModel
+    });
+    
     return res.status(200).json({
         message: "Product added to cart successfully",
-        success: true
+        success: true,
+        cart: populatedCart
     })
 };
 
@@ -131,10 +149,10 @@ export const updateCartItemQuantity = async (req, res) => {
         return res.status(404).json({ message: "Cart not found", success: false });
     }
 
-    const itemIndex = cart.items.findIndex(item => 
-        item.product.toString() === productId && 
-        (variantId === "default" ? !item.variant : item.variant.toString() === variantId)
-    );
+    const itemIndex = cart.items.findIndex(item => {
+        const itemVariantId = item.variant?.toString() || "default";
+        return item.product.toString() === productId && itemVariantId === variantId;
+    });
 
     if (itemIndex === -1) {
         return res.status(404).json({ message: "Item not in cart", success: false });
@@ -150,19 +168,73 @@ export const updateCartItemQuantity = async (req, res) => {
     });
 }
 
-export const getCart = async (req,res) => {
-    const user = req.user
+export const getCart = async (req, res) => {
+    const user = req.user;
 
-    let cart = await cartModel.findOne({ user: user._id }).populate("items.product")
+    // Use Aggregation Pipeline for guaranteed real-time data sync (bypassing Mongoose cache)
+   let cart = (await cartModel.aggregate([
+        {
+            $match: {
+                user: new mongoose.Types.ObjectId(user._id)
+            }
+        },
+        { $unwind: { path: '$items' } },
+        {
+            $lookup: {
+                from: 'products',
+                localField: 'items.product',
+                foreignField: '_id',
+                as: 'items.product'
+            }
+        },
+        { $unwind: { path: '$items.product' } },
+        {
+            $unwind: { path: '$items.product.variants' }
+        },
+        {
+            $match: {
+                $expr: {
+                    $eq: [
+                        '$items.variant',
+                        '$items.product.variants._id'
+                    ]
+                }
+            }
+        },
+        {
+            $addFields: {
+                itemPrice: {
+                    price: {
+                        $multiply: [
+                            '$items.quantity',
+                            '$items.product.variants.price.amount'
+                        ]
+                    },
+                    currency:
+                        '$items.product.variants.price.currency'
+                }
+            }
+        },
+        {
+            $group: {
+                _id: '$_id',
+                totalPrice: { $sum: '$itemPrice.price' },
+                currency: {
+                    $first: '$itemPrice.currency'
+                },
+                items: { $push: '$items' }
+            }
+        }
+    ]))[ 0 ]
 
     if (!cart) {
-        cart = await cartModel.create({ user: user._id })
+        cart = await cartModel.create({ user: user._id });
     }
 
     return res.status(200).json({
         message: "Cart fetched successfully",
         success: true,
         cart
-    })
-}
+    });
+};
 
